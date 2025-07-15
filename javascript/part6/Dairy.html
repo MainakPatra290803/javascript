@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Cattle Diary</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(to right, #e0f7fa, #ffffff);
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #00695c;
+      margin-bottom: 30px;
+    }
+
+    h2 {
+      color: #004d40;
+      border-bottom: 2px solid #004d40;
+      padding-bottom: 5px;
+      margin-top: 40px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: 600;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      margin-top: 6px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+      background: #f9f9f9;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px 24px;
+      background-color: #00796b;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #004d40;
+    }
+
+    .entry {
+      background: #e0f2f1;
+      padding: 15px;
+      border-left: 6px solid #00796b;
+      border-radius: 10px;
+      margin-top: 20px;
+      position: relative;
+    }
+
+    .deleteBtn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #d32f2f;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+
+    .suggestion {
+      margin-top: 10px;
+      background: #f1f8e9;
+      border-left: 4px solid #8bc34a;
+      padding: 10px;
+      border-radius: 6px;
+      font-style: italic;
+      color: #33691e;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🐄 Smart Cattle Diary</h1>
+
+    <label>Name</label>
+    <input type="text" id="name">
+
+    <label>Type</label>
+    <select id="type">
+      <option value="Cow">Cow</option>
+      <option value="Calf">Calf</option>
+    </select>
+
+    <label>Age (months)</label>
+    <input type="number" id="age">
+
+    <label>Breed</label>
+    <select id="breed">
+      <option value="Gir">Gir</option>
+      <option value="Jersey">Jersey</option>
+      <option value="Sahiwal">Sahiwal</option>
+    </select>
+
+    <label>Milk Production (litres)</label>
+    <input type="number" id="milk">
+
+    <label>Mood</label>
+    <select id="mood">
+      <option value="Happy">Happy</option>
+      <option value="Sad">Sad</option>
+      <option value="Angry">Angry</option>
+      <option value="Weak">Weak</option>
+    </select>
+
+    <div id="pregnancySection" style="display:none">
+      <label>Is Pregnant?</label>
+      <select id="pregnant">
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </select>
+    </div>
+
+    <label>Diseases</label>
+    <select id="disease" multiple>
+      <option value="None">None</option>
+      <option value="Mastitis">Mastitis</option>
+      <option value="FMD">Foot and Mouth Disease</option>
+      <option value="Brucellosis">Brucellosis</option>
+    </select>
+
+    <button onclick="saveEntry()">➕ Save Entry</button>
+
+    <h2>📋 Cattle Records</h2>
+    <div id="entriesContainer"></div>
+  </div>
+
+  <script>
+    const breedAverage = {
+      'Gir': 8,
+      'Jersey': 10,
+      'Sahiwal': 7
+    };
+
+    document.getElementById('mood').addEventListener('change', () => {
+      const mood = document.getElementById('mood').value;
+      const type = document.getElementById('type').value;
+      document.getElementById('pregnancySection').style.display = (mood === 'Angry' && type === 'Cow') ? 'block' : 'none';
+    });
+
+    function saveEntry() {
+      const name = document.getElementById('name').value.trim();
+      const type = document.getElementById('type').value;
+      const age = document.getElementById('age').value;
+      const breed = document.getElementById('breed').value;
+      const milk = parseFloat(document.getElementById('milk').value);
+      const mood = document.getElementById('mood').value;
+      const pregnant = document.getElementById('pregnant').value || 'N/A';
+      const disease = Array.from(document.getElementById('disease').selectedOptions).map(opt => opt.value);
+
+      let suggestion = "";
+      if (type === 'Cow' && milk < breedAverage[breed]) {
+        if (disease.includes("Mastitis")) suggestion = "Possible udder infection. Call a vet.";
+        else if (mood === "Sad" || mood === "Weak") suggestion = "Check feed quality or consult vet.";
+        else suggestion = "Consider increasing green fodder or rest time.";
+      } else if (type === 'Calf' && mood === "Weak") {
+        suggestion = "Ensure mother's milk or starter feed is provided.";
+      } else if (disease.includes("Brucellosis")) {
+        suggestion = "Highly contagious. Isolate and inform vet.";
+      } else {
+        suggestion = "Health seems fine. Keep monitoring.";
+      }
+
+      const entry = {
+        name, type, age, breed, milk, mood, pregnant, disease, suggestion,
+        timestamp: new Date().toLocaleString()
+      };
+
+      const entries = JSON.parse(localStorage.getItem('cattleEntries')) || [];
+      entries.unshift(entry);
+      localStorage.setItem('cattleEntries', JSON.stringify(entries));
+      displayEntries();
+    }
+
+    function deleteEntry(index) {
+      const entries = JSON.parse(localStorage.getItem('cattleEntries')) || [];
+      entries.splice(index, 1);
+      localStorage.setItem('cattleEntries', JSON.stringify(entries));
+      displayEntries();
+    }
+
+    function displayEntries() {
+      const entries = JSON.parse(localStorage.getItem('cattleEntries')) || [];
+      const container = document.getElementById('entriesContainer');
+      container.innerHTML = '';
+
+      entries.forEach((entry, i) => {
+        const div = document.createElement('div');
+        div.className = 'entry';
+        div.innerHTML = `
+          <strong>${entry.name} (${entry.type})</strong><br>
+          <strong>Breed:</strong> ${entry.breed} | <strong>Age:</strong> ${entry.age} months<br>
+          <strong>Milk:</strong> ${entry.milk} L/day | <strong>Mood:</strong> ${entry.mood} | <strong>Pregnant:</strong> ${entry.pregnant}<br>
+          <strong>Disease(s):</strong> ${entry.disease.join(', ')}
+          <div class="suggestion">💡 Suggestion: ${entry.suggestion}</div>
+          <small>Recorded on: ${entry.timestamp}</small>
+          <button class="deleteBtn" onclick="deleteEntry(${i})">Delete</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    window.onload = displayEntries;
+  </script>
+</body>
+</html>
+
+
+
